@@ -1,18 +1,29 @@
 'use client'
 
 import { useState } from 'react'
+import Script from 'next/script'
 import { Reveal3D } from './reveal-3d'
 import { Phone, MapPin, Check } from 'lucide-react'
+
+declare global {
+  interface Window {
+    hcaptcha?: { reset: (widgetId?: string) => void }
+  }
+}
 
 // ⬇️⬇️⬇️ LO ÚNICO QUE TENÉS QUE CAMBIAR ⬇️⬇️⬇️
 // Pegá acá la access key que te da Web3Forms.
 // IMPORTANTE: generá la access key registrando el mail luis_igarzabal@yahoo.com.ar,
 // así los mensajes del formulario le llegan a esa casilla.
-const WEB3FORMS_ACCESS_KEY = 'PEGA_TU_ACCESS_KEY_ACA'
+const WEB3FORMS_ACCESS_KEY = '1df1a4f6-12b5-4a88-b878-1595e529213d'
 // ⬆️⬆️⬆️ ------------------------------- ⬆️⬆️⬆️
 
 // A quién le llegan las consultas del formulario.
 const CONTACT_RECIPIENT_EMAIL = 'luis_igarzabal@yahoo.com.ar'
+
+// Site key compartida de hCaptcha para el plan free de Web3Forms.
+// En un plan pago se reemplaza por la site key propia.
+const HCAPTCHA_SITE_KEY = '50b2fe65-b00b-4b9e-ad62-3ba471098be2'
 
 const info = [
   { icon: Phone, label: 'Teléfono', value: '+54 2804 412390' },
@@ -23,14 +34,23 @@ export function Contact() {
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(false)
+  const [captchaError, setCaptchaError] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(false)
-    setSending(true)
+    setCaptchaError(false)
 
     const form = e.currentTarget
     const formData = new FormData(form)
+
+    // hCaptcha inyecta el token en el campo "h-captcha-response".
+    if (!formData.get('h-captcha-response')) {
+      setCaptchaError(true)
+      return
+    }
+
+    setSending(true)
     formData.append('access_key', WEB3FORMS_ACCESS_KEY)
     formData.append('subject', 'Nueva solicitud de presupuesto desde la web')
     formData.append('to', CONTACT_RECIPIENT_EMAIL)
@@ -46,6 +66,7 @@ export function Contact() {
       if (data.success) {
         setSent(true)
         form.reset()
+        window.hcaptcha?.reset()
         setTimeout(() => setSent(false), 4000)
       } else {
         setError(true)
@@ -59,6 +80,7 @@ export function Contact() {
 
   return (
     <section id="contacto" className="relative border-t border-border bg-secondary/30 py-24 md:py-32">
+      <Script src="https://js.hcaptcha.com/1/api.js" async defer />
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
           <Reveal3D>
@@ -146,6 +168,8 @@ export function Contact() {
                   autoComplete="off"
                 />
 
+                <div className="h-captcha" data-sitekey={HCAPTCHA_SITE_KEY} />
+
                 <button
                   type="submit"
                   disabled={sending}
@@ -161,6 +185,12 @@ export function Contact() {
                     'Enviar mensaje'
                   )}
                 </button>
+
+                {captchaError && (
+                  <p className="text-sm text-red-500">
+                    Completá el captcha antes de enviar.
+                  </p>
+                )}
 
                 {error && (
                   <p className="text-sm text-red-500">
