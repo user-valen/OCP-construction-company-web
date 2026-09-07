@@ -18,8 +18,9 @@ declare global {
 const WEB3FORMS_ACCESS_KEY = '1df1a4f6-12b5-4a88-b878-1595e529213d'
 // ⬆️⬆️⬆️ ------------------------------- ⬆️⬆️⬆️
 
-// A quién le llegan las consultas del formulario.
-const CONTACT_RECIPIENT_EMAIL = 'luis_igarzabal@yahoo.com.ar'
+// El destinatario de las consultas (luis_igarzabal@yahoo.com.ar) se configura
+// en el panel de Web3Forms para esta access key. El plan free no permite
+// sobreescribirlo desde el formulario con el campo "to".
 
 // Site key compartida de hCaptcha para el plan free de Web3Forms.
 // En un plan pago se reemplaza por la site key propia.
@@ -50,10 +51,13 @@ export function Contact() {
       return
     }
 
+    // hCaptcha puede inyectar un token de compat con reCaptcha; Web3Forms free
+    // lo interpreta como reCaptcha (feature Pro) y rechaza el envío.
+    formData.delete('g-recaptcha-response')
+
     setSending(true)
     formData.append('access_key', WEB3FORMS_ACCESS_KEY)
     formData.append('subject', 'Nueva solicitud de presupuesto desde la web')
-    formData.append('to', CONTACT_RECIPIENT_EMAIL)
     // Para que "Responder" vaya directo al cliente que escribió.
     formData.append('replyto', String(formData.get('email') ?? ''))
 
@@ -69,9 +73,11 @@ export function Contact() {
         window.hcaptcha?.reset()
         setTimeout(() => setSent(false), 4000)
       } else {
+        console.error('Web3Forms:', data)
         setError(true)
       }
-    } catch {
+    } catch (err) {
+      console.error('Web3Forms:', err)
       setError(true)
     } finally {
       setSending(false)
@@ -80,7 +86,7 @@ export function Contact() {
 
   return (
     <section id="contacto" className="relative border-t border-border bg-secondary/30 py-24 md:py-32">
-      <Script src="https://js.hcaptcha.com/1/api.js" async defer />
+      <Script src="https://js.hcaptcha.com/1/api.js?recaptchacompat=off" async defer />
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
           <Reveal3D>
