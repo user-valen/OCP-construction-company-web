@@ -57,7 +57,7 @@ export function Contact() {
 
     setSending(true)
     formData.append('access_key', WEB3FORMS_ACCESS_KEY)
-    formData.append('subject', 'Nueva solicitud de presupuesto desde la web')
+    formData.append('subject', 'Consulta para OCP desde web ocp.com.ar')
     // Para que "Responder" vaya directo al cliente que escribió.
     formData.append('replyto', String(formData.get('email') ?? ''))
 
